@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tablero de Gestión Sistema Divino</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: informe tipo Power BI — lienzo gris claro, tarjetas blancas, una paleta por fase; tema claro único a pedido */
+:root{
+  color-scheme:light;
+  --bg:#F3F2F1; --surface:#FFFFFF; --surface-2:#FAF9F8; --line:#E1DFDD; --line-2:#EDEBE9;
+  --fg:#252423; --muted:#605E5C; --muted-2:#8A8886;
+  --accent:#118DFF; --accent-soft:#E5F1FF;
+  --p1:#118DFF; --p2:#744EC2; --p3:#E66C37; --p4:#1AAB40;
+  --p1-soft:#E5F1FF; --p2-soft:#EFEAF9; --p3-soft:#FDEDE5; --p4-soft:#E3F6E8;
+  --m1:#118DFF; --m2:#12239E; --m3:#E66C37; --m4:#6B007B;
+  --s-plan:#8A8886; --s-run:#F2C80F; --s-rev:#12239E; --s-ok:#1AAB40;
+  --o-equipo:#118DFF; --o-prod:#E66C37; --o-rev:#E044A7; --o-audit:#744EC2; --o-pruebas:#D9B300;
+  --f:"Segoe UI","Inter",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--fg);font-family:var(--f);font-size:14px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1,h2,h3,h4{margin:0;line-height:1.25;text-wrap:balance;font-weight:600}
+h1{font-size:clamp(22px,3.4vw,30px)}
+h2{font-size:18px}
+h3{font-size:15px}
+p{margin:0}
+button{font-family:inherit}
+/* encabezado */
+.top{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);height:5px}
+.strip i:nth-child(1){background:var(--p1)}.strip i:nth-child(2){background:var(--p2)}.strip i:nth-child(3){background:var(--p3)}.strip i:nth-child(4){background:var(--p4)}
+.top-in{padding:18px 22px;display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:flex-end}
+.top-in .t{display:grid;gap:4px;min-width:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.sub{color:var(--muted);font-size:14px;max-width:70ch}
+.phase-keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.phase-keys span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:4px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--c)}
+.kpi .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.kpi b{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi small{font-size:12px;color:var(--muted-2)}
+.bar{height:6px;background:var(--line-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c);border-radius:99px;transition:width .3s}
+/* pestañas */
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+nav.tabs a{font-weight:600;font-size:13.5px;color:var(--muted);text-decoration:none;padding:8px 14px;border-radius:7px}
+nav.tabs a:hover{background:var(--surface-2);color:var(--fg)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:#FFFFFF}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,.kcard:focus-visible,.cyc-h:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.view{display:grid;gap:14px}
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
+.sec-head .t{display:grid;gap:4px;max-width:78ch}
+.sec-head p{color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.panel-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-h h3{font-size:14.5px}
+.hint{font-size:12px;color:var(--muted-2)}
+.scroll{overflow-x:auto}
+/* chips filtro */
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fchip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.fchip:hover{border-color:var(--muted-2)}
+.fchip[aria-pressed="true"]{background:var(--fg);color:#FFFFFF;border-color:var(--fg)}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:7px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+input[type="search"]{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:6px 10px;background:var(--surface);color:var(--fg);min-width:0;width:220px;max-width:100%}
+/* Gantt */
+svg text{font-family:var(--f)}
+.g-lbl{font-size:12px;fill:var(--fg)}
+.g-code{font-size:11px;fill:var(--muted-2);font-weight:600}
+.g-axis{font-size:10.5px;fill:var(--muted)}
+.g-year{font-size:12px;font-weight:600;fill:var(--fg)}
+.g-grid{stroke:var(--line-2);stroke-width:1}
+.g-rowbg{fill:var(--surface-2)}
+.g-band{fill:#FFF7D6}
+.g-bandtxt{font-size:10.5px;fill:var(--muted);font-style:italic}
+.g-today{stroke:#D64550;stroke-width:1.5;stroke-dasharray:3 3}
+.g-todaytxt{font-size:10.5px;fill:#D64550;font-weight:600}
+.g-row{transition:opacity .2s}
+.g-row.dim{opacity:.18}
+[data-tip]{cursor:pointer}
+.lg{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12px;color:var(--muted);align-items:center}
+.lg i{display:inline-block;width:20px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.lg .l-plan{background:var(--accent-soft);border:1.5px solid var(--accent)}
+.lg .l-replan{border:1.5px dashed var(--p3)}
+.lg .l-exe{background:var(--accent)}
+.lg .l-ms{width:10px;height:10px;transform:rotate(45deg);background:var(--fg);border-radius:1px}
+.lg .l-rev{width:10px;height:10px;transform:rotate(45deg);background:#D64550;border-radius:1px}
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.phase{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:10px;align-content:start;cursor:pointer;text-align:left;font:inherit;color:inherit;border-top:4px solid var(--c);transition:box-shadow .15s,transform .15s}
+.phase:hover{box-shadow:0 4px 14px rgba(37,36,35,.08);transform:translateY(-1px)}
+.phase[aria-pressed="true"]{box-shadow:0 0 0 2px var(--c)}
+.phase h3{display:flex;gap:8px;align-items:center}
+.phase h3 em{font-style:normal;background:var(--c);color:#FFFFFF;border-radius:6px;width:24px;height:24px;display:inline-grid;place-items:center;font-size:13px}
+.phase ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:13px}
+.phase .meta{font-size:12.5px;color:var(--muted);display:grid;gap:3px}
+.phase .meta b{color:var(--fg);font-weight:600}
+.team{width:100%;border-collapse:collapse;font-size:13px}
+.team td,.team th{padding:8px 10px;border-bottom:1px solid var(--line-2);text-align:left;vertical-align:top}
+.team th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.team tr:last-child td{border-bottom:0}
+.av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;color:#FFFFFF;font-size:11px;font-weight:700;margin-right:8px;vertical-align:middle}
+/* Kanban */
+.board-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.board{display:grid;grid-template-columns:repeat(4,minmax(250px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.col{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;display:grid;grid-template-rows:auto 1fr;min-width:0;transition:background .15s,border-color .15s}
+.col.over{background:var(--accent-soft);border-color:var(--accent)}
+.col-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 12px 8px;border-bottom:3px solid var(--sc)}
+.col-h h3{font-size:14px;display:flex;gap:8px;align-items:center}
+.count{font-size:12px;font-weight:700;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-variant-numeric:tabular-nums}
+.klist{display:grid;gap:8px;padding:10px;min-height:120px;max-height:640px;overflow-y:auto;align-content:start}
+.empty{font-size:12.5px;color:var(--muted-2);border:1.5px dashed var(--line);border-radius:8px;padding:18px 10px;text-align:center}
+.kcard{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:8px;padding:10px 12px;display:grid;gap:6px;cursor:grab;user-select:none;-webkit-user-select:none;box-shadow:0 1px 2px rgba(37,36,35,.06);transition:box-shadow .15s,transform .15s}
+.kcard:hover{box-shadow:0 4px 12px rgba(37,36,35,.12);transform:translateY(-1px)}
+.kcard.dragging{display:none}
+.kcard.ghost{position:fixed;z-index:100;pointer-events:none;box-shadow:0 14px 30px rgba(37,36,35,.25);transform:rotate(2deg);cursor:grabbing;margin:0}
+.slot{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:8px}
+.kcard .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kcard .code{font-size:11px;font-weight:700;color:var(--c);background:var(--cs);border-radius:5px;padding:1px 7px}
+.grip{border:0;background:transparent;color:var(--muted-2);font-size:15px;line-height:1;padding:2px 4px;cursor:grab;touch-action:none;border-radius:4px}
+.grip:hover{background:var(--surface-2);color:var(--fg)}
+.kcard h4{font-size:13.5px;font-weight:600}
+.kcard .d{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kcard .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.kcard .who .av{width:20px;height:20px;font-size:9px;margin:0}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important}
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(37,36,35,.38);z-index:200;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:12px;max-width:520px;width:100%;max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25);border-top:6px solid var(--c)}
+.modal-in{padding:18px 20px;display:grid;gap:12px}
+.modal .row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.x{border:0;background:var(--surface-2);border-radius:7px;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--fg);flex:none}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.modal ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px}
+select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:var(--surface);color:var(--fg)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--cs);color:var(--c);white-space:nowrap}
+/* ciclos */
+.stepper{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px}
+.step{flex:1 0 128px;display:grid;justify-items:center;gap:6px;position:relative;background:none;border:0;cursor:pointer;padding:4px 6px;color:var(--fg);font:inherit}
+.step::before{content:"";position:absolute;top:21px;left:-50%;width:100%;height:3px;background:var(--line);z-index:0}
+.step:first-child::before{display:none}
+.step .n{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;color:#FFFFFF;background:var(--c);position:relative;z-index:1;box-shadow:0 0 0 4px var(--surface)}
+.step[aria-pressed="true"] .n{box-shadow:0 0 0 4px var(--surface),0 0 0 6px var(--c)}
+.step .s1{font-size:12px;font-weight:600;text-align:center;line-height:1.3}
+.step .s2{font-size:11px;color:var(--muted)}
+.cycles{display:grid;gap:10px}
+.cyc{scroll-margin-top:72px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;border-left:5px solid var(--c)}
+.cyc-h{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:12px 16px;cursor:pointer;width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}
+.cyc-h:hover{background:var(--surface-2)}
+.cyc-h .n{font-size:22px;font-weight:700;color:var(--c);min-width:42px}
+.cyc-h .t{display:grid;gap:3px;min-width:0}
+.cyc-h .t span{font-size:12.5px;color:var(--muted)}
+.cyc-h .chev{font-size:18px;color:var(--muted);transition:transform .2s}
+.cyc[open-state="1"] .chev{transform:rotate(180deg)}
+.cyc-b{padding:0 16px 16px;display:grid;gap:12px}
+.cyc-b .tags{display:flex;flex-wrap:wrap;gap:6px}
+.quad{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.q{border-radius:8px;padding:10px 12px;display:grid;gap:6px;align-content:start;background:var(--surface-2);border-top:3px solid var(--qc)}
+.q h5{margin:0;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--qc)}
+.q ul{margin:0;padding-left:16px;font-size:13px;display:grid;gap:3px}
+.seq{display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:12.5px}
+.seq span{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.seq span.drop{text-decoration:line-through;color:var(--muted-2)}
+.seq span.final{background:var(--p4-soft);border-color:var(--p4);color:#0E7A2D;font-weight:600}
+.seq b{color:var(--muted-2);font-weight:400}
+.loop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;font-weight:600}
+.loop span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.loop b{color:var(--accent)}
+/* decisiones */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}
+.tbl th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:2px solid var(--line);background:var(--surface);cursor:pointer;white-space:nowrap}
+.tbl th:hover{color:var(--fg)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--line-2);vertical-align:top}
+.tbl tbody tr:hover td{background:var(--surface-2)}
+.tbl td.id{font-weight:700;color:var(--muted-2);white-space:nowrap;font-size:12px}
+.tbl td.date{white-space:nowrap;font-variant-numeric:tabular-nums}
+/* gráficos */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:12px}
+.cgrid .wide{grid-column:1/-1}
+.c-lbl{font-size:11px;fill:var(--muted)}
+.c-val{font-size:11px;fill:var(--fg);font-weight:600}
+.c-big{font-size:24px;fill:var(--fg);font-weight:600}
+.c-gap{font-size:11px;fill:var(--muted-2);font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px}
+.legend button{border:0;background:none;padding:2px 4px;font:inherit;font-size:12px;color:var(--fg);cursor:pointer;display:inline-flex;align-items:center;gap:6px;border-radius:4px}
+.legend button[aria-pressed="false"]{opacity:.35}
+.legend button:hover{background:var(--surface-2)}
+.seg{transition:opacity .15s}
+.seg:hover{opacity:.8}
+/* tooltip */
+#tip{position:fixed;z-index:300;pointer-events:none;background:#252423;color:#FFFFFF;font-size:12px;line-height:1.4;padding:7px 10px;border-radius:6px;max-width:260px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+#tip b{display:block;font-weight:600}
+@media (max-width:760px){
+  .board{grid-template-columns:repeat(4,minmax(260px,84vw))}
+  .cyc-h{grid-template-columns:auto 1fr auto;gap:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="strip"><i></i><i></i><i></i><i></i></div>
+  <div class="top-in">
+    <div class="t">
+      <span class="eyebrow">Sistema Divino · Gestión del proyecto</span>
+      <h1>Ejecución del enfoque ágil iterativo</h1>
+      <p class="sub">Ciclos, entregables, cambios y decisiones según las cuatro fases del proyecto.</p>
+    </div>
+    <div class="phase-keys" id="phaseKeys"></div>
+  </div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<nav class="tabs" aria-label="Vistas">
+  <a href="#fases" data-v="fases">Fases y cronograma</a>
+  <a href="#tablero" data-v="tablero">Tablero de entregables</a>
+  <a href="#ciclos" data-v="ciclos">Ciclos iterativos</a>
+  <a href="#decisiones" data-v="decisiones">Cambios y decisiones</a>
+</nav>
+
+<!-- FASES -->
+<section class="view" id="v-fases">
+  <div class="sec-head">
+    <div class="t">
+      <h2>Fases del proyecto: planificado y ejecutado</h2>
+      <p>Cada fila es una subfase. Pasá el cursor sobre las barras y los hitos para ver el detalle; tocá una fase para resaltarla.</p>
+    </div>
+    <div class="chips" id="ganttFilter"></div>
+  </div>
+  <div class="panel">
+    <div class="scroll" id="gantt"></div>
+    <div class="lg">
+      <span><i class="l-plan"></i>Planificado</span>
+      <span><i class="l-replan"></i>Re-planificado (OE1–OE5)</span>
+      <span><i class="l-exe"></i>Ejecutado</span>
+      <span><i class="l-ms"></i>Hito o entrega</span>
+      <span><i class="l-rev"></i>Revisión del avance</span>
+    </div>
+  </div>
+  <div class="phases" id="phaseCards"></div>
+  <div class="panel">
+    <div class="panel-h"><h3>Responsables de los hitos</h3></div>
+    <div class="scroll"><table class="team" id="team"></table></div>
+  </div>
+</section>
+
+<!-- TABLERO -->
+<section class="view" id="v-tablero" hidden>
+  <div class="sec-head">
+    <div class="t">
+      <h2>Tablero de entregables</h2>
+      <p>Arrastrá las tarjetas entre columnas para cambiar su estado. Tocá una tarjeta para ver el detalle. En el celular, arrastrá desde el ícono ⠿.</p>
+    </div>
+  </div>
+  <div class="board-tools">
+    <div class="chips" id="boardFilter"></div>
+    <div class="chips">
+      <input type="search" id="q" placeholder="Buscar entregable…" aria-label="Buscar entregable">
+      <button type="button" class="btn" id="reset">Restablecer</button>
+    </div>
+  </div>
+  <div class="board" id="board"></div>
+</section>
+
+<!-- CICLOS -->
+<section class="view" id="v-ciclos" hidden>
+  <div class="sec-head">
+    <div class="t">
+      <h2>Ciclos iterativos</h2>
+      <p>Cada ciclo dejó un entregable evaluable. Su revisión generó los cambios y las decisiones que alimentaron el ciclo siguiente.</p>
+    </div>
+    <div class="chips"><button type="button" class="btn" id="expandAll">Expandir todos</button></div>
+  </div>
+  <div class="panel">
+    <div class="loop"><span>Priorizar</span><b>→</b><span>Construir</span><b>→</b><span>Probar</span><b>→</b><span>Desplegar</span><b>→</b><span>Revisar</span><b>→</b><span>Ajustar</span><b>↺</b></div>
+    <div class="stepper" id="stepper"></div>
+  </div>
+  <div class="cycles" id="cycles"></div>
+</section>
+
+<!-- DECISIONES -->
+<section class="view" id="v-decisiones" hidden>
+  <div class="sec-head">
+    <div class="t">
+      <h2>Registro de cambios y decisiones</h2>
+      <p>Qué se decidió, cuándo, en qué fase y por qué. Filtrá por fase u origen, o tocá un segmento del gráfico.</p>
+    </div>
+  </div>
+  <div class="dgrid">
+    <div class="panel"><div class="panel-h"><h3>Decisiones por origen</h3></div><div id="dDonut"></div></div>
+    <div class="panel"><div class="panel-h"><h3>Decisiones por fase</h3></div><div id="dBars"></div></div>
+  </div>
+  <div class="panel">
+    <div class="board-tools">
+      <div class="chips" id="decPh"></div>
+      <div class="chips" id="decOrg"></div>
+    </div>
+    <div class="scroll"><table class="tbl" id="decTbl"></table></div>
+  </div>
+</section>
+
+</div>
+<div id="tip" hidden></div>
+<div id="modalRoot"></div>
+
+<script>
+/* ================= Datos ================= */
+const PH = {
+  1:{n:"Planificación", c:"var(--p1)", s:"var(--p1-soft)", hex:"#118DFF"},
+  2:{n:"Análisis y Diseño", c:"var(--p2)", s:"var(--p2-soft)", hex:"#744EC2"},
+  3:{n:"Desarrollo del Sistema", c:"var(--p3)", s:"var(--p3-soft)", hex:"#E66C37"},
+  4:{n:"Implementación", c:"var(--p4)", s:"var(--p4-soft)", hex:"#1AAB40"}
+};
+const ST = [
+  {k:"plan", n:"Planificado", c:"var(--s-plan)", hex:"#8A8886"},
+  {k:"run",  n:"En curso",    c:"var(--s-run)",  hex:"#F2C80F"},
+  {k:"rev",  n:"En revisión", c:"var(--s-rev)",  hex:"#12239E"},
+  {k:"ok",   n:"Completado",  c:"var(--s-ok)",   hex:"#1AAB40"}
+];
+const PEOPLE = {
+  "Rigo, Marcos Maximiliano":"#118DFF", "Albornoz, Maria Agostina":"#E044A7", "Abraham Vieyra, Andrea Sofia":"#744EC2",
+  "Palma, Emilce Rocio":"#E66C37", "Zurita, Jose Matias":"#12239E", "Equipo de desarrollo":"#6B007B", "Todo el equipo":"#605E5C"
+};
+const ini = n => n.startsWith("Equipo")||n.startsWith("Todo") ? "EQ" : n.split(",")[1].trim()[0] + n[0];
+
+const CARDS = [
+  {id:"c01",p:1,code:"1.1",t:"Acta de Constitución y Registro de Interesados",st:"ok",plan:"31/03/25 – 04/04/25",real:"Entregado 08/05/25",who:"Abraham Vieyra, Andrea Sofia",
+   ev:["Reuniones con el co-tutor (28/04), la jefa de Sistemas (29/04) y la tutora (02/05)","Tema aprobado el 05/05 y ficha de aprobación el 06/05","Interesados: Arzobispado de Tucumán, tutores, jefa de Sistemas, Cátedra y equipo"]},
+  {id:"c02",p:1,code:"1.2",t:"Declaración de Alcance, Matriz de Trazabilidad y EDT",st:"ok",plan:"04/04/25 – 11/04/25",real:"Entregado 26/05/25",who:"Abraham Vieyra, Andrea Sofia",
+   ev:["28 requisitos (RF1–RF17, RNF18–RNF28) con prioridad, dueño y objetivo","Alcance dividido en MVP y funciones complementarias"]},
+  {id:"c03",p:1,code:"1.3",t:"Cronograma del proyecto",st:"ok",plan:"24/04/25 – 01/05/25",real:"Entregado 11/06/25",who:"Palma, Emilce Rocio",ev:["Diagrama de Gantt con fases, hitos y actividades","Línea base para el seguimiento del avance"]},
+  {id:"c04",p:1,code:"1.3",t:"Plan Financiero",st:"ok",plan:"17/04/25 – 24/04/25",real:"Entregado 21/06/25",who:"Palma, Emilce Rocio",ev:["Costos estimados por recurso, actividad y fase"]},
+  {id:"c05",p:1,code:"1.3",t:"Registro y Plan de Riesgos",st:"ok",plan:"14/04/25 – 17/04/25",real:"Entregado 27/07/25",who:"Zurita, Jose Matias",ev:["Riesgos con probabilidad, impacto y plan de respuesta","Incluye retrasos en el cronograma y demoras de aprobación"]},
+  {id:"c06",p:1,code:"1.3",t:"Plan de Gestión del Proyecto",st:"ok",plan:"01/05/25 – 07/05/25",real:"Entregado 22/09/25",who:"Zurita, Jose Matias",ev:["Integra alcance, tiempo, costos, riesgos, calidad y comunicaciones"]},
+  {id:"c07",p:2,code:"2.1",t:"Análisis funcional e historias de usuario",st:"ok",plan:"26/06/25 – 16/07/25",real:"Entregado 01/10/25",who:"Abraham Vieyra, Andrea Sofia",
+   ev:["Casos de uso, reglas de negocio, validaciones y restricciones","Historias de usuario con criterios de aceptación"]},
+  {id:"c08",p:2,code:"2.2",t:"Prototipos UX/UI del panel y del portal",st:"ok",plan:"17/07/25 – 24/07/25",real:"Entregado 01/10/25",who:"Abraham Vieyra, Andrea Sofia",ev:["Prototipos del panel administrativo y del portal público"]},
+  {id:"c09",p:2,code:"2.2",t:"Arquitectura técnica y modular",st:"ok",plan:"24/07/25 – 29/07/25",real:"Entregado 01/10/25",who:"Abraham Vieyra, Andrea Sofia",ev:["Frontends en capas, backend como API con módulos de negocio, datos en MySQL y blockchain"]},
+  {id:"c10",p:2,code:"2.2",t:"Diseño de la base de datos",st:"ok",plan:"29/07/25 – 30/07/25",real:"Entregado 01/10/25",who:"Abraham Vieyra, Andrea Sofia",ev:["Diagrama Entidad-Relación"]},
+  {id:"c11",p:2,code:"2.2",t:"Diseño del módulo blockchain",st:"ok",plan:"30/07/25 – 06/08/25",real:"Entregado 01/10/25",who:"Abraham Vieyra, Andrea Sofia",ev:["Registro y verificación de certificados"]},
+  {id:"c12",p:2,code:"2.2",t:"Diseño de pruebas",st:"ok",plan:"06/08/25 – 18/08/25",real:"Entregado 01/10/25",who:"Abraham Vieyra, Andrea Sofia",ev:["Base del Plan de Testing y los casos de prueba"]},
+  {id:"c13",p:3,code:"3.1",t:"Módulo de usuarios y gestión de roles",st:"ok",plan:"06/08/25 – 21/08/25",real:"Reforzado 07/11/26",who:"Equipo de desarrollo",ev:["Roles Administrador, Sacerdote y Secretario","Permisos por rol aplicados en el servidor"]},
+  {id:"c14",p:3,code:"3.1",t:"Módulo de gestión de certificados",st:"ok",plan:"21/08/25 – 08/09/25",real:"Reforzado 06/11/26",who:"Equipo de desarrollo",ev:["Certificado en PDF con código QR","Reemisión con versiones y revocación"]},
+  {id:"c15",p:3,code:"3.1",t:"Módulo de seguridad",st:"ok",plan:"08/09/25 – 23/09/25",real:"Reforzado 12/11/26",who:"Equipo de desarrollo",ev:["Verificación de identidad con DNI y rostro en vivo","Respaldos diarios con prueba de restauración"]},
+  {id:"c16",p:3,code:"3.1",t:"Verificación y generación de hash",st:"ok",plan:"23/09/25 – 08/10/25",real:"Reforzado 07/11/26",who:"Equipo de desarrollo",ev:["Hash con integridad y autoría del emisor","Sin respuesta de la red, el certificado no se da por válido"]},
+  {id:"c17",p:3,code:"3.1",t:"Pruebas del MVP",st:"ok",plan:"08/10/25 – 13/10/25",real:"Avance inicial 20/10/25",who:"Rigo, Marcos Maximiliano",ev:["Cada módulo probado antes de avanzar al siguiente"]},
+  {id:"c18",p:3,code:"3.2",t:"Módulo de gestión de turnos",st:"ok",plan:"13/10/25 – 22/10/25",real:"Completado 12/11/26",who:"Equipo de desarrollo",ev:["Reserva con control de cupo","Reasignación de turnos desde el panel"]},
+  {id:"c19",p:3,code:"3.2",t:"Donaciones y pagos digitales",st:"ok",plan:"13/10/25 – 28/10/25",real:"Completado 16/11/26",who:"Equipo de desarrollo",ev:["Pago con Mercado Pago y comprobante en pantalla","Historial de donaciones del fiel"]},
+  {id:"c20",p:3,code:"3.2",t:"Módulo de noticias y foros",st:"ok",plan:"23/10/25 – 03/11/25",real:"Completado 07/11/26",who:"Equipo de desarrollo",ev:["Noticias por categoría","Foro comunitario con moderación (RF06)"]},
+  {id:"c21",p:3,code:"3.2",t:"Estadísticas e informes",st:"ok",plan:"28/10/25 – 06/11/25",real:"Completado 07/11/26",who:"Equipo de desarrollo",ev:["Gráficos en el panel","Reportes en Excel y PDF (RF15)"]},
+  {id:"c22",p:3,code:"3.2",t:"Pruebas de funciones complementarias",st:"ok",plan:"06/11/25 – 12/11/25",real:"Avance total 03/11/25",who:"Rigo, Marcos Maximiliano",ev:["236 pruebas automatizadas aprobadas","Compatibilidad de navegadores y prueba de carga"]},
+  {id:"c23",p:4,code:"4.1",t:"Hosting, dominio y puesta en producción",st:"ok",plan:"20/11/25 – 25/11/25",real:"En producción desde 01/07/26",who:"Rigo, Marcos Maximiliano",ev:["Backend y base de datos en Railway","Panel y portal en Vercel","Cada cambio aprobado se despliega"]},
+  {id:"c24",p:4,code:"4.2",t:"Manual de usuario",st:"ok",plan:"25/11/25 – 26/11/25",real:"Publicado 07/11/26",who:"Equipo de desarrollo",ev:["Disponible desde el panel y desde el portal (RNF26)"]},
+  {id:"c25",p:4,code:"4.2",t:"Capacitación de usuarios",st:"ok",plan:"27/11/25 – 01/12/25",real:"Realizada",who:"Todo el equipo",ev:["Personal administrativo autorizado de la parroquia"]},
+  {id:"c26",p:4,code:"4.3",t:"Exposición oral grupal",st:"plan",plan:"01/12/25 – 02/12/25",real:"A confirmar",who:"Todo el equipo",ev:["Exposición del proyecto con todos los integrantes"]},
+  {id:"c27",p:4,code:"4.3",t:"Informe final",st:"run",plan:"02/12/25 – 04/12/25",real:"Versión final en preparación",who:"Todo el equipo",ev:["Informe con los resultados de todos los ciclos"]}
+];
+
+const ROWS = [
+  {p:1, code:"1.1", n:"Acta de Constitución e Interesados", plan:[["2025-03-31","2025-04-04"]],
+   ms:[["2025-04-28","Reunión con el co-tutor"],["2025-05-05","Aprobación del tema"],["2025-05-08","Entrega: Acta e Interesados"]]},
+  {p:1, code:"1.2", n:"Alcance, Trazabilidad y EDT", plan:[["2025-04-04","2025-04-11"]], ms:[["2025-05-26","Entrega: Matriz, Alcance y EDT"]]},
+  {p:1, code:"1.3", n:"Riesgos, Finanzas, Cronograma, Plan", plan:[["2025-04-14","2025-05-07"]],
+   ms:[["2025-06-11","Entrega: Cronograma"],["2025-06-21","Entrega: Plan Financiero"],["2025-07-27","Entrega: Plan de Riesgos"],["2025-09-22","Entrega: Plan de Gestión"]]},
+  {p:2, code:"2.1", n:"Análisis funcional", plan:[["2025-06-26","2025-07-16"]]},
+  {p:2, code:"2.2", n:"Diseño del sistema", plan:[["2025-07-17","2025-08-18"]], ms:[["2025-10-01","Entrega: Análisis y Diseño"]]},
+  {p:3, code:"3.1", n:"Desarrollo del MVP", plan:[["2025-08-06","2025-10-13"]], replan:[["2025-11-01","2026-03-31","OE1–OE2"]],
+   exe:[["2026-11-05","2026-11-07","Ciclos 4 y 5"],["2026-11-11","2026-11-12","Ciclo 6"]], ms:[["2025-10-20","Avance inicial de implementación"]]},
+  {p:3, code:"3.2", n:"Funciones complementarias", plan:[["2025-10-13","2025-11-12"]], replan:[["2026-03-01","2026-06-30","OE3–OE5"]],
+   exe:[["2026-07-01","2026-07-14","Ciclo 3"],["2026-11-06","2026-11-07","Ciclo 5"],["2026-11-14","2026-11-16","Ciclo 7"]], ms:[["2025-11-03","Avance total de implementación"]]},
+  {p:4, code:"4.1", n:"Despliegue del sistema", plan:[["2025-11-20","2025-11-25"]], exe:[["2026-07-01","2026-07-29","Ciclo 3: puesta en producción"],["2026-11-05","2026-11-16","Despliegue continuo"]]},
+  {p:4, code:"4.2", n:"Capacitación y manuales", plan:[["2025-11-25","2025-12-01"]], exe:[["2026-11-07","2026-11-07","Manuales publicados"]]},
+  {p:4, code:"4.3", n:"Entrega y presentación final", plan:[["2025-12-01","2025-12-04"]],
+   ms:[["2025-11-17","Exposiciones grupales (propuesto)"],["2025-11-19","Informe final (propuesto)"]], rev:[["2026-11-03","Revisión del avance"]]}
+];
+
+const PHASE_CARDS = [
+  {p:1, items:["1.1 Acta de Constitución y Registro de Interesados","1.2 Alcance, Matriz de Trazabilidad y EDT","1.3 Riesgos, Plan Financiero, Cronograma y Plan de Gestión"], plan:"31/03/25 – 07/05/25", real:"Entregas del 08/05/25 al 22/09/25"},
+  {p:2, items:["2.1 Casos de uso, reglas y validaciones → historias de usuario","2.2 UX/UI, arquitectura, base de datos, blockchain y pruebas"], plan:"26/06/25 – 18/08/25", real:"Entrega 01/10/25"},
+  {p:3, items:["3.1 MVP: usuarios y roles, certificados, seguridad, verificación y hash","3.2 Turnos, donaciones, noticias y foros, estadísticas"], plan:"06/08/25 – 12/11/25, re-planificado hasta 30/06/26", real:"Ciclos 1 a 7"},
+  {p:4, items:["4.1 Hosting y puesta en producción","4.2 Manuales y capacitación","4.3 Exposición e informe final"], plan:"20/11/25 – 04/12/25", real:"Producción desde 01/07/26 con despliegue continuo"}
+];
+
+const TEAM = [
+  ["Rigo, Marcos Maximiliano","Reunión con el co-tutor (28/04/25) · Reunión con la jefa de Sistemas (29/04/25) · Aprobación del tema (05/05/25) · Avance inicial de implementación y pruebas (20/10/25) · Avance total de implementación y pruebas (03/11/25)"],
+  ["Albornoz, Maria Agostina","Primera reunión con la tutora (02/05/25) · Ficha de aprobación del tema (06/05/25)"],
+  ["Abraham Vieyra, Andrea Sofia","Acta de Constitución y Registro de Interesados (08/05/25) · Matriz de Trazabilidad, Alcance y EDT (26/05/25) · Avance de Análisis y Diseño (01/10/25)"],
+  ["Palma, Emilce Rocio","Cronograma (11/06/25) · Plan Financiero (21/06/25)"],
+  ["Zurita, Jose Matias","Plan de Riesgos (27/07/25) · Plan de Gestión del Proyecto (22/09/25)"],
+  ["Todo el equipo","Exposiciones grupales orales · Informe final"]
+];
+
+const CYCLES = [
+  {n:1, when:"ago – oct 2025", ph:[3], t:"Desarrollo del MVP", goal:"Construir el núcleo del sistema en el orden de prioridad del alcance.",
+   ent:["Módulo de usuarios y gestión de roles","Módulo de certificados","Módulo de seguridad","Verificación y generación de hash"],
+   rev:["Pruebas del MVP (08/10 – 13/10/25)","Avance inicial de implementación (20/10/25)"],
+   cam:["Cada módulo se probó antes de avanzar al siguiente"],
+   dec:["El MVP debe estar validado antes de empezar las funciones complementarias"]},
+  {n:2, when:"oct – nov 2025", ph:[3], t:"Funciones complementarias", goal:"Sumar los servicios parroquiales sobre el MVP validado.",
+   ent:["Gestión de turnos","Donaciones y pagos con Mercado Pago","Noticias y foros","Estadísticas e informes"],
+   rev:["Pruebas de funciones complementarias","Avance total de implementación (03/11/25)"],
+   cam:["Los plazos se re-planificaron por módulo (OE1–OE5, nov/25 – jun/26)"],
+   dec:["Avanzar por módulo con fecha propia en lugar de un único cierre"]},
+  {n:3, when:"jul 2026", ph:[4,3], t:"Puesta en producción", goal:"Llevar el sistema a un entorno real y corregir lo que solo aparece en producción.",
+   ent:["Backend y base de datos en Railway; panel y portal en Vercel","PDF del certificado rediseñado","Registro de la transacción y enlace al explorador de la red","Analítica de uso en los dos sitios"],
+   rev:["Uso real en producción, con problemas que no aparecían en el entorno local"],
+   cam:["Acceso entre dominios de producción (CORS)","Nombres de tabla en minúscula: MySQL en Linux distingue mayúsculas","Zona horaria corregida en turnos y eventos","Actualización de Next.js por una vulnerabilidad"],
+   dec:["Organizar el código en un módulo por servicio","Iterar directamente sobre producción"]},
+  {n:4, when:"05 – 06 nov 2026", ph:[3,4], t:"Revisión de calidad y correcciones", goal:"Resolver las observaciones de la revisión del avance.",
+   ent:["Verificación de identidad con DNI y rostro, en un servicio nuevo","Rechazo de sacramentos y correos duplicados","Hash con integridad y autoría; reemisión y revocación","Turnos y donaciones del panel conectados al servidor","Aclaración de que Sepolia es una red de prueba"],
+   rev:["Revisión del avance: 6 observaciones y una lista de control de 8 puntos","Primera prueba con un DNI real: el código de barras no se leyó"],
+   cam:["Solo se descuentan los intentos que realmente se evaluaron","Fotos del DNI en alta resolución y lectura más robusta"],
+   dec:["Verificación de identidad propia, sin costo por consulta","Una integración por corrección en cada módulo"]},
+  {n:5, when:"07 nov 2026", ph:[3,4], t:"Auditoría de requisitos (fases A–E)", goal:"Que cada requisito RF/RNF esté implementado y probado.",
+   ent:["A · Verificación segura ante fallas y reintento de registro","B · Permisos por rol en el servidor, recuperación de contraseña (RF13), migraciones automáticas","C · Foro moderado (RF06), estadísticas Excel/PDF (RF15), búsqueda avanzada, cupo de turnos","D · Respaldos con prueba de restauración (RNF25) y registro de auditoría","E · 236 pruebas automatizadas, navegadores (RNF23/28), carga (RNF20/21), manuales (RNF26)"],
+   rev:["Contraste de RF1–RNF28 e indicadores con el sistema en funcionamiento"],
+   cam:["La recuperación de contraseña asistida por secretaría se descartó y se implementó por email"],
+   dec:["Si la red no responde, el certificado no se da por válido","Los cambios de base de datos se aplican solos al iniciar"]},
+  {n:6, when:"11 – 12 nov 2026", ph:[3], t:"Verificación de identidad con usuarios reales", goal:"Que la verificación funcione en celulares comunes y sea simple de completar.",
+   ent:["Escaneo automático del DNI en el navegador, tolerante a inclinación","Validación de rostro en vivo con parpadeo","Textos públicos en lenguaje simple"],
+   rev:["Pruebas con DNI y celulares reales"],
+   cam:["Parpadeo detectado también en cámaras lentas y con distintos rasgos","Se quitaron componentes sin uso"],
+   dec:["Integrar cada cambio directamente a producción","No mostrar la cantidad de intentos disponibles"]},
+  {n:7, when:"14 – 16 nov 2026", ph:[3,4], t:"Cierre: donaciones y diseño adaptable", goal:"Dejar el flujo de pago completo y el sistema usable en cualquier pantalla.",
+   ent:["Página de pago propia con comprobante en pantalla","Confirmación del pago consultando a Mercado Pago","Modo demostración con pagos simulados","Tablas adaptables en el panel y el portal"],
+   rev:["Prueba del flujo completo de donación"],
+   cam:["No se envía el email del pagador a Mercado Pago","Los respaldos reintentan la conexión con la base de datos"],
+   dec:["Demostrar el flujo de pago sin cobros reales"]}
+];
+
+const ORG = {equipo:["Equipo","var(--o-equipo)","#118DFF"], prod:["Producción","var(--o-prod)","#E66C37"], rev:["Revisión","var(--o-rev)","#E044A7"], audit:["Auditoría","var(--o-audit)","#744EC2"], pruebas:["Pruebas","var(--o-pruebas)","#D9B300"]};
+const DEC = [
+  ["D01","2025",1,"Adoptar un enfoque ágil iterativo simplificado en lugar de Cascada o Scrum estricto","Equipo de cinco personas, cronograma académico y requisitos que cambian con el entorno real","equipo"],
+  ["D02","2025",1,"Dividir el alcance en MVP y funciones complementarias","Tener una versión funcional y evaluable en cada etapa","equipo"],
+  ["D03","2025",3,"Probar cada módulo del MVP antes de avanzar al siguiente","Detectar errores temprano en lugar de acumularlos","equipo"],
+  ["D04","2025",3,"Re-planificar los plazos por módulo (OE1–OE5, nov/25 – jun/26)","Nuevos plazos por módulo; el plan de riesgos prevé ajustar el cronograma ante retrasos","equipo"],
+  ["D05","01/07/26",4,"Organizar el código en un módulo por servicio (servidor, panel, portal)","Despliegues independientes y mantenimiento por módulo","equipo"],
+  ["D06","01/07/26",4,"Servidor y base de datos en Railway; panel y portal en Vercel","Funcionar en la nube, sin infraestructura física en la parroquia","prod"],
+  ["D07","01/07/26",4,"Nombres de tabla en minúscula","MySQL en Linux distingue mayúsculas y en Windows no","prod"],
+  ["D08","07/07/26",3,"Guardar la transacción del certificado y enlazarla al explorador de la red","Que cualquiera pueda comprobar el registro","prod"],
+  ["D09","14/07/26",3,"Fijar la zona horaria de la base de datos","Turnos y eventos se guardaban con desfase horario","prod"],
+  ["D10","05/11/26",3,"Verificación de identidad propia (DNI + rostro) como servicio separado","El DNI por sí solo no prueba que el usuario sea su titular; sin costo por consulta","rev"],
+  ["D11","06/11/26",3,"Rechazar sacramentos y correos duplicados","El resultado esperado (100 %) no coincidía con un caso de prueba","rev"],
+  ["D12","06/11/26",3,"Separar integridad, autoría y validez institucional del certificado","Un hash prueba integridad, no quién emitió; Sepolia es una red de prueba","rev"],
+  ["D13","06/11/26",3,"Conectar turnos y donaciones del panel al servidor","La funcionalidad usaba datos de ejemplo","rev"],
+  ["D14","07/11/26",3,"Sin respuesta de la red, el certificado no se valida","Evitar falsos positivos (caso de prueba VA-03)","audit"],
+  ["D15","07/11/26",3,"Aplicar los permisos por rol en el servidor","Los permisos no pueden depender solo de la interfaz","audit"],
+  ["D16","07/11/26",3,"Descartar la recuperación asistida por secretaría e implementarla por email","Se priorizó la recuperación por email (RF13)","audit"],
+  ["D17","07/11/26",4,"Respaldos diarios con prueba de restauración y pruebas automatizadas","RNF25 y evidencias reproducibles de las pruebas","rev"],
+  ["D18","11/11/26",4,"Integrar cada cambio directamente a producción","Ciclos de corrección cortos","equipo"],
+  ["D19","11/11/26",3,"Reemplazar los desafíos activos por una selfie única","Completar la verificación desde un celular común","pruebas"],
+  ["D20","12/11/26",3,"Probar código por email y reemplazarlo el mismo día por rostro en vivo con parpadeo","Iteración rápida sobre la alternativa probada","pruebas"],
+  ["D21","12/11/26",3,"Textos públicos en lenguaje simple, sin nombres de tecnologías","Usuarios con habilidades básicas; no prometer más de lo que el sistema garantiza","rev"],
+  ["D22","16/11/26",4,"Modo demostración con pagos simulados y comprobante inmediato","Mostrar el flujo de donación completo sin cobros reales","pruebas"]
+];
+
+/* ================= Estado del tablero ================= */
+const KEY = "sd-tablero-v2";
+const DEFAULT = CARDS.map(c=>({id:c.id, st:c.st}));
+let board = load();
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(s) && s.length===CARDS.length && s.every(x=>CARDS.some(c=>c.id===x.id))) return s; }catch(e){}
+  return DEFAULT.map(x=>({...x}));
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(board)); }catch(e){} }
+const card = id => CARDS.find(c=>c.id===id);
+const stOf = id => board.find(b=>b.id===id).st;
+
+/* ================= Utilidades ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const tip = $("#tip");
+document.addEventListener("pointermove", e=>{
+  const t = e.target.closest && e.target.closest("[data-tip]");
+  if(!t || document.body.classList.contains("is-dragging")){ tip.hidden = true; return; }
+  tip.innerHTML = t.getAttribute("data-tip"); tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if(x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if(y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+});
+document.addEventListener("pointerleave", ()=>{ tip.hidden = true; });
+const fmt = d => { const [y,m,dd] = d.split("-"); return `${dd}/${m}/${y.slice(2)}`; };
+
+/* ================= Encabezado y KPI ================= */
+$("#phaseKeys").innerHTML = [1,2,3,4].map(p=>`<span><i class="dot" style="background:${PH[p].c}"></i>${p}. ${PH[p].n}</span>`).join("");
+function kpis(){
+  const done = board.filter(b=>b.st==="ok").length, tot = board.length, pct = Math.round(done/tot*100);
+  const k = [
+    ["Fases del proyecto","4","10 subfases","var(--p1)"],
+    ["Hitos y entregas","16","de abril a noviembre de 2025","var(--p2)"],
+    ["Ciclos iterativos","7","2 en 2025 · 5 en 2026","var(--p3)"]
+  ];
+  $("#kpis").innerHTML = k.map(([l,b,s,c])=>`<div class="kpi" style="--c:${c}"><span class="lbl">${l}</span><b>${b}</b><small>${s}</small></div>`).join("") +
+    `<div class="kpi" style="--c:var(--p4)"><span class="lbl">Entregables completados</span><b>${done}<span style="font-size:18px;color:var(--muted-2)"> / ${tot}</span></b><div class="bar"><i style="width:${pct}%"></i></div><small>${pct} % del total</small></div>`;
+}
+
+/* ================= Gantt ================= */
+let gPh = 0;
+function gantt(){
+  const P = s => { const [y,m,d] = s.split("-"); return new Date(+y, m-1, +d); };
+  const start = new Date(2025,2,1), end = new Date(2026,11,1);
+  const months = []; for(let d=new Date(start); d<end; d.setMonth(d.getMonth()+1)) months.push(new Date(d));
+  const LW = 250, MW = 43, RH = 32, TOP = 46, W = LW + months.length*MW + 12, H = TOP + ROWS.length*RH + 30;
+  const x = s => LW + (P(s) - start)/(864e5*30.437)*MW;
+  const M = ["E","F","M","A","M","J","J","A","S","O","N","D"];
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}" style="min-width:980px;display:block" role="img" aria-label="Cronograma planificado y ejecutado por subfase">`;
+  s += `<rect class="g-band" x="${x("2025-12-05")}" y="${TOP}" width="${x("2026-06-30")-x("2025-12-05")}" height="${ROWS.length*RH}"/>`;
+  ROWS.forEach((r,i)=>{ if(i%2===0) s += `<rect class="g-rowbg" x="0" y="${TOP+i*RH}" width="${W}" height="${RH}"/>`; });
+  months.forEach((m,i)=>{
+    const xx = LW + i*MW;
+    s += `<line class="g-grid" x1="${xx}" y1="${TOP-14}" x2="${xx}" y2="${TOP+ROWS.length*RH}"/>`;
+    s += `<text class="g-axis" x="${xx+MW/2}" y="${TOP-4}" text-anchor="middle">${M[m.getMonth()]}</text>`;
+    if(m.getMonth()===0 || i===0) s += `<text class="g-year" x="${xx+4}" y="16">${m.getFullYear()}</text>`;
+  });
+  ROWS.forEach((r,i)=>{
+    const y = TOP + i*RH, cy = y + RH/2, ph = PH[r.p];
+    s += `<g class="g-row${gPh && gPh!==r.p ? " dim":""}">`;
+    s += `<rect x="0" y="${y+3}" width="4" height="${RH-6}" rx="2" fill="${ph.hex}"/>`;
+    s += `<text class="g-code" x="14" y="${cy+4}">${r.code}</text><text class="g-lbl" x="46" y="${cy+4}">${r.n}</text>`;
+    (r.plan||[]).forEach(([a,b])=>{ const w=Math.max(6,x(b)-x(a)); s += `<rect x="${x(a)}" y="${cy-7}" width="${w}" height="14" rx="3" fill="${ph.hex}" fill-opacity=".16" stroke="${ph.hex}" stroke-width="1.5" data-tip="<b>${r.code} ${esc(r.n)}</b>Planificado: ${fmt(a)} a ${fmt(b)}"/>`; });
+    (r.replan||[]).forEach(([a,b,l])=>{ s += `<rect x="${x(a)}" y="${cy-7}" width="${x(b)-x(a)}" height="14" rx="3" fill="#FFFFFF" fill-opacity=".01" stroke="#E66C37" stroke-width="1.5" stroke-dasharray="4 3" data-tip="<b>Re-planificado ${l}</b>Hasta ${fmt(b)}"/><text class="g-axis" x="${x(a)+5}" y="${cy+3.5}" pointer-events="none">${l}</text>`; });
+    (r.exe||[]).forEach(([a,b,l])=>{ const w=Math.max(7,x(b)-x(a)); s += `<rect x="${x(a)}" y="${cy-8}" width="${w}" height="16" rx="3" fill="${ph.hex}" data-tip="<b>Ejecutado · ${esc(l)}</b>${fmt(a)} a ${fmt(b)}"/>`; });
+    (r.ms||[]).forEach(([d,l])=>{ const xx=x(d); s += `<rect x="${xx-5}" y="${cy-5}" width="10" height="10" fill="#252423" transform="rotate(45 ${xx} ${cy})" data-tip="<b>${esc(l)}</b>${fmt(d)}"/>`; });
+    (r.rev||[]).forEach(([d,l])=>{ const xx=x(d); s += `<rect x="${xx-6}" y="${cy-6}" width="12" height="12" fill="#D64550" transform="rotate(45 ${xx} ${cy})" data-tip="<b>${esc(l)}</b>Noviembre de 2026"/>`; });
+    s += `</g>`;
+  });
+  s += `<text class="g-bandtxt" x="${x("2026-01-10")}" y="${TOP+ROWS.length*RH+18}">Re-planificación por objetivos específicos</text>`;
+  const t = x("2026-11-16");
+  s += `<line class="g-today" x1="${t}" y1="${TOP-14}" x2="${t}" y2="${TOP+ROWS.length*RH}"/><text class="g-todaytxt" x="${t-4}" y="${TOP+ROWS.length*RH+18}" text-anchor="end">hoy</text></svg>`;
+  $("#gantt").innerHTML = s;
+  $("#ganttFilter").innerHTML = [0,1,2,3,4].map(p=>`<button type="button" class="fchip" id="gf-${p}" data-p="${p}" aria-pressed="${gPh===p}">${p?`<i class="dot" style="background:${PH[p].c}"></i>${PH[p].n}`:"Todas las fases"}</button>`).join("");
+  $("#phaseCards").innerHTML = PHASE_CARDS.map(c=>{
+    const cs = CARDS.filter(k=>k.p===c.p), ok = cs.filter(k=>stOf(k.id)==="ok").length;
+    return `<div class="phase" role="button" tabindex="0" data-p="${c.p}" aria-pressed="${gPh===c.p}" style="--c:${PH[c.p].c}">
+      <h3><em>${c.p}</em>${PH[c.p].n}</h3>
+      <ul>${c.items.map(i=>`<li>${i}</li>`).join("")}</ul>
+      <div class="meta"><span><b>Planificado:</b> ${c.plan}</span><span><b>Ejecutado:</b> ${c.real}</span><span><b>Entregables:</b> ${ok} de ${cs.length} completados</span></div>
+      <div class="bar" style="--c:${PH[c.p].c}"><i style="width:${Math.round(ok/cs.length*100)}%"></i></div>
+    </div>`;}).join("");
+}
+document.addEventListener("keydown", e=>{
+  const ph = e.target.closest && e.target.closest("#phaseCards .phase");
+  if(ph && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); ph.click(); }
+});
+document.addEventListener("click", e=>{
+  const b = e.target.closest("#ganttFilter [data-p], #phaseCards .phase");
+  if(!b) return;
+  const p = +b.dataset.p; gPh = (gPh===p && b.classList.contains("phase")) ? 0 : p; gantt();
+});
+$("#team").innerHTML = `<tr><th>Integrante</th><th>Hitos a cargo</th></tr>` + TEAM.map(([a,b])=>`<tr><td style="white-space:nowrap"><span class="av" style="background:${PEOPLE[a]}">${ini(a)}</span><b>${a}</b></td><td>${b}</td></tr>`).join("");
+
+/* ================= Kanban ================= */
+let bPh = 0, q = "";
+function renderBoard(){
+  $("#boardFilter").innerHTML = [0,1,2,3,4].map(p=>`<button type="button" class="fchip" id="bf-${p}" data-bp="${p}" aria-pressed="${bPh===p}">${p?`<i class="dot" style="background:${PH[p].c}"></i>${PH[p].n}`:"Todas"}</button>`).join("");
+  const vis = id => { const c = card(id); return (!bPh || c.p===bPh) && (!q || (c.t+" "+c.code+" "+c.who).toLowerCase().includes(q)); };
+  $("#board").innerHTML = ST.map(s=>{
+    const ids = board.filter(b=>b.st===s.k && vis(b.id)).map(b=>b.id);
+    return `<div class="col" style="--sc:${s.c}">
+      <div class="col-h"><h3><i class="dot" style="background:${s.c}"></i>${s.n}</h3><span class="count">${ids.length}</span></div>
+      <div class="klist" data-st="${s.k}">${ids.map(id=>{ const c = card(id); return `
+        <article class="kcard" tabindex="0" data-id="${id}" style="--c:${PH[c.p].c};--cs:${PH[c.p].s}" aria-label="${esc(c.t)}, ${s.n}">
+          <div class="row"><span class="code">${c.code} · ${PH[c.p].n}</span><button type="button" class="grip" aria-label="Arrastrar">⠿</button></div>
+          <h4>${c.t}</h4>
+          <div class="d">Plan: ${c.plan}</div>
+          <div class="who"><span class="av" style="background:${PEOPLE[c.who]}">${ini(c.who)}</span>${c.who}</div>
+        </article>`;}).join("") || `<div class="empty">Arrastrá una tarjeta aquí</div>`}</div>
+    </div>`;}).join("");
+}
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-bp]"); if(!b) return; bPh = +b.dataset.bp; renderBoard();
+});
+$("#q").addEventListener("input", e=>{ q = e.target.value.trim().toLowerCase(); renderBoard(); });
+$("#reset").addEventListener("click", ()=>{ board = DEFAULT.map(x=>({...x})); save(); refresh(); });
+
+/* arrastrar y soltar con puntero (mouse, lápiz y táctil desde el ícono) */
+let drag = null, justDragged = false;
+$("#board").addEventListener("pointerdown", e=>{
+  const el = e.target.closest(".kcard"); if(!el || e.button>0) return;
+  if(e.pointerType==="touch" && !e.target.closest(".grip")) return;
+  drag = {el, id:el.dataset.id, x:e.clientX, y:e.clientY, on:false};
+  if(e.target.closest(".grip")) e.preventDefault();
+});
+window.addEventListener("pointermove", e=>{
+  if(!drag) return;
+  if(!drag.on){
+    if(Math.hypot(e.clientX-drag.x, e.clientY-drag.y) < 6) return;
+    const r = drag.el.getBoundingClientRect();
+    drag.ox = e.clientX - r.left; drag.oy = e.clientY - r.top;
+    drag.ghost = drag.el.cloneNode(true); drag.ghost.classList.add("ghost"); drag.ghost.style.width = r.width + "px";
+    document.body.appendChild(drag.ghost);
+    drag.slot = document.createElement("div"); drag.slot.className = "slot"; drag.slot.style.height = r.height + "px";
+    drag.el.after(drag.slot); drag.el.classList.add("dragging");
+    document.body.classList.add("is-dragging"); drag.on = true; tip.hidden = true;
+  }
+  e.preventDefault();
+  drag.ghost.style.left = (e.clientX - drag.ox) + "px"; drag.ghost.style.top = (e.clientY - drag.oy) + "px";
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const list = under && under.closest(".klist");
+  document.querySelectorAll(".col.over").forEach(c=>c.classList.remove("over"));
+  if(list){
+    list.closest(".col").classList.add("over");
+    const emp = list.querySelector(".empty"); if(emp) emp.remove();
+    const after = [...list.querySelectorAll(".kcard:not(.dragging)")].find(c=>{ const r = c.getBoundingClientRect(); return e.clientY < r.top + r.height/2; });
+    after ? list.insertBefore(drag.slot, after) : list.appendChild(drag.slot);
+  }
+  const bd = $("#board"), br = bd.getBoundingClientRect();
+  if(e.clientX > br.right - 40) bd.scrollLeft += 12; else if(e.clientX < br.left + 40) bd.scrollLeft -= 12;
+}, {passive:false});
+window.addEventListener("pointerup", ()=>{
+  if(!drag) return;
+  if(drag.on){
+    const list = drag.slot.parentElement, st = list.dataset.st;
+    let next = drag.slot.nextElementSibling; while(next && !next.dataset.id) next = next.nextElementSibling;
+    const prevCards = [...list.querySelectorAll(".kcard:not(.dragging)")];
+    const moved = board.find(b=>b.id===drag.id); moved.st = st;
+    board = board.filter(b=>b.id!==drag.id);
+    let at = board.length;
+    if(next) at = board.findIndex(b=>b.id===next.dataset.id);
+    else if(prevCards.length) at = board.findIndex(b=>b.id===prevCards[prevCards.length-1].dataset.id) + 1;
+    board.splice(at, 0, moved);
+    drag.ghost.remove(); document.body.classList.remove("is-dragging");
+    save(); justDragged = true; setTimeout(()=>justDragged=false, 50); refresh();
+  }
+  drag = null;
+});
+$("#board").addEventListener("click", e=>{
+  const el = e.target.closest(".kcard"); if(!el || justDragged) return; openCard(el.dataset.id);
+});
+$("#board").addEventListener("keydown", e=>{
+  const el = e.target.closest(".kcard"); if(el && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); openCard(el.dataset.id); }
+});
+function openCard(id){
+  const c = card(id), st = stOf(id);
+  $("#modalRoot").innerHTML = `<div class="overlay" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt" style="--c:${PH[c.p].c};--cs:${PH[c.p].s}">
+    <div class="modal-in">
+      <div class="row"><span class="tag">${c.code} · ${PH[c.p].n}</span><button type="button" class="x" id="mx" aria-label="Cerrar">×</button></div>
+      <h3 id="mt" style="font-size:18px">${c.t}</h3>
+      <dl class="kv"><dt>Planificado</dt><dd>${c.plan}</dd><dt>Resultado</dt><dd>${c.real}</dd><dt>Responsable</dt><dd>${c.who}</dd>
+        <dt>Estado</dt><dd><select id="mst" aria-label="Estado">${ST.map(s=>`<option value="${s.k}" ${s.k===st?"selected":""}>${s.n}</option>`).join("")}</select></dd></dl>
+      <div><h4 style="font-size:13px;margin-bottom:6px">Detalle</h4><ul>${c.ev.map(e=>`<li>${e}</li>`).join("")}</ul></div>
+    </div></div></div>`;
+  const close = ()=>{ $("#modalRoot").innerHTML = ""; document.removeEventListener("keydown", onEsc); };
+  const onEsc = e=>{ if(e.key==="Escape") close(); };
+  document.addEventListener("keydown", onEsc);
+  $("#mx").onclick = close; $("#mx").focus();
+  $("#ov").addEventListener("click", e=>{ if(e.target.id==="ov") close(); });
+  $("#mst").addEventListener("change", e=>{ board.find(b=>b.id===id).st = e.target.value; save(); refresh(); });
+}
+
+/* ================= Ciclos ================= */
+const open = new Set([6]);
+function renderCycles(){
+  $("#stepper").innerHTML = CYCLES.map(c=>`<button type="button" class="step" data-c="${c.n}" aria-pressed="${open.has(c.n)}" style="--c:${PH[c.ph[0]].c}"><span class="n">C${c.n}</span><span class="s1">${c.t}</span><span class="s2">${c.when}</span></button>`).join("");
+  $("#cycles").innerHTML = CYCLES.map(c=>`
+    <article class="cyc" id="cyc-${c.n}" open-state="${open.has(c.n)?1:0}" style="--c:${PH[c.ph[0]].c}">
+      <button type="button" class="cyc-h" data-c="${c.n}" aria-expanded="${open.has(c.n)}">
+        <span class="n">C${c.n}</span>
+        <span class="t"><strong style="font-size:15px;font-weight:600">${c.t}</strong><span>${c.when} · ${c.goal}</span></span>
+        <span class="chev">⌄</span>
+      </button>
+      ${open.has(c.n)?`<div class="cyc-b">
+        <div class="tags">${c.ph.map(p=>`<span class="tag" style="--c:${PH[p].c};--cs:${PH[p].s}">${p}. ${PH[p].n}</span>`).join("")}</div>
+        <div class="quad">
+          <div class="q" style="--qc:#1AAB40"><h5>Entregables</h5><ul>${c.ent.map(e=>`<li>${e}</li>`).join("")}</ul></div>
+          <div class="q" style="--qc:#118DFF"><h5>Revisión</h5><ul>${c.rev.map(e=>`<li>${e}</li>`).join("")}</ul></div>
+          <div class="q" style="--qc:#E66C37"><h5>Cambios</h5>
+            ${c.seq?`<div class="seq">${c.seq.map(([s,k],i)=>`${i?"<b>→</b>":""}<span class="${k}">${s}</span>`).join("")}</div>`:""}
+            <ul>${c.cam.map(e=>`<li>${e}</li>`).join("")}</ul></div>
+          <div class="q" style="--qc:#744EC2"><h5>Decisiones</h5><ul>${c.dec.map(e=>`<li>${e}</li>`).join("")}</ul></div>
+        </div></div>`:""}
+    </article>`).join("");
+  $("#expandAll").textContent = open.size===CYCLES.length ? "Contraer todos" : "Expandir todos";
+}
+document.addEventListener("click", e=>{
+  const b = e.target.closest("#stepper .step, #cycles .cyc-h"); if(!b) return;
+  const n = +b.dataset.c;
+  if(b.classList.contains("step")){ open.add(n); renderCycles(); document.getElementById("cyc-"+n).scrollIntoView({behavior:"smooth", block:"start"}); }
+  else { open.has(n) ? open.delete(n) : open.add(n); renderCycles(); }
+});
+$("#expandAll").addEventListener("click", ()=>{ if(open.size===CYCLES.length) open.clear(); else CYCLES.forEach(c=>open.add(c.n)); renderCycles(); });
+
+/* ================= Gráficos ================= */
+function donut(el, data, center, onClick, active){
+  const tot = data.reduce((a,d)=>a+d.v,0), R = 70, r = 46, cx = 90, cy = 90;
+  let a0 = -Math.PI/2, s = `<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center"><svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="${center[1]}">`;
+  data.forEach(d=>{
+    if(!d.v) return;
+    const a1 = a0 + d.v/tot*Math.PI*2 - (d.v===tot?1e-4:0), big = a1-a0 > Math.PI ? 1 : 0;
+    const p = (rr,a)=>`${cx+rr*Math.cos(a)},${cy+rr*Math.sin(a)}`;
+    s += `<path class="seg" d="M${p(R,a0)} A${R},${R} 0 ${big} 1 ${p(R,a1)} L${p(r,a1)} A${r},${r} 0 ${big} 0 ${p(r,a0)} Z" fill="${d.c}" opacity="${active && active!==d.k ? .3 : 1}" data-k="${d.k}" data-tip="<b>${d.n}</b>${d.v} (${Math.round(d.v/tot*100)} %)"/>`;
+    a0 = a1;
+  });
+  s += `<text class="c-big" x="${cx}" y="${cy+4}" text-anchor="middle">${center[0]}</text><text class="c-lbl" x="${cx}" y="${cy+22}" text-anchor="middle">${center[1]}</text></svg>`;
+  s += `<div class="legend" style="flex-direction:column;gap:6px">${data.map(d=>`<button type="button" data-k="${d.k}" aria-pressed="${!active||active===d.k}"><i class="dot" style="background:${d.c}"></i>${d.n} <b style="font-variant-numeric:tabular-nums">${d.v}</b></button>`).join("")}</div></div>`;
+  el.innerHTML = s;
+  if(onClick) el.querySelectorAll("[data-k]").forEach(n=>n.addEventListener("click",()=>onClick(n.dataset.k)));
+}
+function hbars(el, rows, max, opts={}){
+  const W = 520, RH = 34, L = opts.L||150, H = rows.length*RH + 10;
+  let s = `<svg width="100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.label||""}">`;
+  rows.forEach((r,i)=>{
+    const y = i*RH + 6, w = (W-L-40)*(r.v/max);
+    s += `<text class="c-lbl" x="${L-8}" y="${y+15}" text-anchor="end" style="fill:var(--fg)">${r.n}</text>`;
+    s += `<rect x="${L}" y="${y+3}" width="${W-L-40}" height="18" rx="4" fill="#EDEBE9"/>`;
+    s += `<rect class="seg" x="${L}" y="${y+3}" width="${Math.max(w,0)}" height="18" rx="4" fill="${r.c}" data-tip="<b>${r.n}</b>${r.tip||r.v}"/>`;
+    s += `<text class="c-val" x="${L+Math.max(w,0)+6}" y="${y+16}">${r.lbl ?? r.v}</text>`;
+  });
+  el.innerHTML = s + `</svg>`;
+}
+/* ================= Decisiones ================= */
+let dPh = 0, dOrg = null, sortK = 0, sortDir = 1;
+function decisions(){
+  const counts = Object.keys(ORG).map(k=>({k, n:ORG[k][0], c:ORG[k][2], v:DEC.filter(d=>d[5]===k).length}));
+  donut($("#dDonut"), counts, [String(DEC.length),"decisiones"], k=>{ dOrg = dOrg===k ? null : k; decisions(); }, dOrg);
+  hbars($("#dBars"), [1,2,3,4].map(p=>({n:PH[p].n, v:DEC.filter(d=>d[2]===p).length, c:PH[p].hex, tip:`${DEC.filter(d=>d[2]===p).length} decisiones`})), 14, {label:"Decisiones por fase"});
+  $("#decPh").innerHTML = [0,1,2,3,4].map(p=>`<button type="button" class="fchip" id="dp-${p}" data-dp="${p}" aria-pressed="${dPh===p}">${p?`<i class="dot" style="background:${PH[p].c}"></i>${PH[p].n}`:"Todas las fases"}</button>`).join("");
+  $("#decOrg").innerHTML = Object.keys(ORG).map(k=>`<button type="button" class="fchip" id="do-${k}" data-do="${k}" aria-pressed="${dOrg===k}"><i class="dot" style="background:${ORG[k][1]}"></i>${ORG[k][0]}</button>`).join("");
+  let rows = DEC.filter(d=>(!dPh||d[2]===dPh) && (!dOrg||d[5]===dOrg));
+  if(sortK) rows = rows.slice().sort((a,b)=> (a[sortK] > b[sortK] ? 1 : a[sortK] < b[sortK] ? -1 : 0) * sortDir);
+  const H = [["Id",0],["Fecha",0],["Fase",2],["Cambio o decisión",3],["Motivo",4],["Origen",5]];
+  $("#decTbl").innerHTML = `<thead><tr>${H.map(([h,k])=>`<th data-sk="${k}" title="Ordenar">${h}${k && sortK===k ? (sortDir>0?" ▲":" ▼") : ""}</th>`).join("")}</tr></thead><tbody>` +
+    (rows.length ? rows.map(d=>`<tr><td class="id">${d[0]}</td><td class="date">${d[1]}</td><td><span class="tag" style="--c:${PH[d[2]].c};--cs:${PH[d[2]].s}">${d[2]}. ${PH[d[2]].n}</span></td><td><b style="font-weight:600">${d[3]}</b></td><td>${d[4]}</td><td><span class="tag" style="--c:${ORG[d[5]][1]};--cs:#F3F2F1"><i class="dot" style="background:${ORG[d[5]][1]}"></i>${ORG[d[5]][0]}</span></td></tr>`).join("")
+     : `<tr><td colspan="6" style="color:var(--muted)">No hay decisiones con estos filtros.</td></tr>`) + `</tbody>`;
+}
+document.addEventListener("click", e=>{
+  const a = e.target.closest("[data-dp]"), o = e.target.closest("[data-do]"), th = e.target.closest("#decTbl th");
+  if(a){ dPh = +a.dataset.dp; decisions(); }
+  else if(o){ dOrg = dOrg===o.dataset.do ? null : o.dataset.do; decisions(); }
+  else if(th){ const k = +th.dataset.sk; if(!k){ sortK = 0; sortDir = 1; } else if(sortK===k) sortDir = -sortDir; else { sortK = k; sortDir = 1; } decisions(); }
+});
+
+/* ================= Navegación ================= */
+const VIEWS = ["fases","tablero","ciclos","decisiones"];
+function route(){
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "fases";
+  VIEWS.forEach(n=>{ document.getElementById("v-"+n).hidden = n!==v; });
+  document.querySelectorAll("nav.tabs a").forEach(a=>{ a.dataset.v===v ? a.setAttribute("aria-current","page") : a.removeAttribute("aria-current"); });
+}
+function refresh(){ kpis(); gantt(); renderBoard(); }
+window.addEventListener("hashchange", route);
+refresh(); renderCycles(); decisions(); route();
+</script>
+</body>
+</html>
